@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLAMES Game with Google Sheets</title>
+    <title>FLAMES Game</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -71,6 +71,7 @@
             font-weight: bold;
             transition: background-color 0.3s;
             margin-top: 10px;
+            width: 100%;
         }
 
         button:hover {
@@ -147,35 +148,16 @@
             100% { transform: rotate(360deg); }
         }
 
-        .history-btn {
-            background-color: #e0e7ff;
-            color: #3b82f6;
-            margin-top: 30px;
-        }
-
-        .history-btn:hover {
-            background-color: #bfdbfe;
-        }
-
-        .history-container {
+        .error-message {
+            color: #ef4444;
+            margin-top: 10px;
             display: none;
-            margin-top: 20px;
-            width: 100%;
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #bfdbfe;
-            border-radius: 8px;
-            padding: 10px;
         }
 
-        .history-item {
-            padding: 10px;
-            border-bottom: 1px solid #bfdbfe;
-            text-align: left;
-        }
-
-        .history-item:last-child {
-            border-bottom: none;
+        .success-message {
+            color: #10b981;
+            margin-top: 10px;
+            display: none;
         }
     </style>
 </head>
@@ -200,6 +182,9 @@
             <p>Calculating your relationship...</p>
         </div>
         
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+        
         <div class="flames-animation" id="flamesAnimation">
             <div class="flames-letter">F</div>
             <div class="flames-letter">L</div>
@@ -212,16 +197,12 @@
         <div class="firework" id="firework"></div>
         
         <div class="result" id="result"></div>
-        
-        <button class="history-btn" id="historyBtn">Show History</button>
-        
-        <div class="history-container" id="historyContainer"></div>
     </div>
 
     <script>
-        // Stein API configuration
-        const STEIN_URL = "https://api.steinhq.com/v1/storages/67e2de52c088333365872d33"; // Replace with your Stein API URL
-        const SHEET_NAME = "flames-results"; // Your sheet name in Stein
+        // Your Stein API configuration
+        const STEIN_URL = "https://api.steinhq.com/v1/storages/67e2ea95c088333365873198";
+        const SHEET_NAME = "flames-results";
 
         document.addEventListener('DOMContentLoaded', function() {
             const calculateBtn = document.getElementById('calculateBtn');
@@ -231,64 +212,62 @@
             const flamesAnimation = document.getElementById('flamesAnimation');
             const firework = document.getElementById('firework');
             const loadingDiv = document.getElementById('loading');
-            const historyBtn = document.getElementById('historyBtn');
-            const historyContainer = document.getElementById('historyContainer');
+            const errorDiv = document.getElementById('errorMessage');
+            const successDiv = document.getElementById('successMessage');
 
-            // Calculate FLAMES result
-            calculateBtn.addEventListener('click', function() {
+            calculateBtn.addEventListener('click', async function() {
                 const name1 = name1Input.value.trim();
                 const name2 = name2Input.value.trim();
                 
                 if (!name1 || !name2) {
-                    alert('Please enter both names!');
+                    showError('Please enter both names!');
                     return;
                 }
                 
-                // Show loading
                 loadingDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+                successDiv.style.display = 'none';
                 resultDiv.textContent = '';
                 
-                // Calculate after a small delay for UX
-                setTimeout(() => {
+                try {
                     const result = calculateFlames(name1, name2);
+                    const saved = await saveToSheet(name1, name2, result);
                     
-                    // Hide loading
                     loadingDiv.style.display = 'none';
                     
-                    // Animate FLAMES letters
-                    animateFlames(result);
+                    if (saved) {
+                        showSuccess("Result saved successfully!");
+                    } else {
+                        showError("Couldn't connect to server, but saved locally!");
+                    }
                     
-                    // Save to Google Sheets via Stein
-                    saveToSheet(name1, name2, result);
-                }, 1500);
-            });
-            
-            // Show/hide history
-            let historyVisible = false;
-            historyBtn.addEventListener('click', function() {
-                historyVisible = !historyVisible;
-                historyContainer.style.display = historyVisible ? 'block' : 'none';
-                historyBtn.textContent = historyVisible ? 'Hide History' : 'Show History';
-                
-                if (historyVisible) {
-                    fetchHistory();
+                    animateFlames(result);
+                } catch (error) {
+                    loadingDiv.style.display = 'none';
+                    showError('An error occurred. Please try again.');
+                    console.error(error);
                 }
             });
 
-            // FLAMES calculation logic
+            function showError(message) {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+
+            function showSuccess(message) {
+                successDiv.textContent = message;
+                successDiv.style.display = 'block';
+            }
+
             function calculateFlames(name1, name2) {
-                // Process names
                 const processedName1 = name1.toLowerCase().replace(/\s+/g, '');
                 const processedName2 = name2.toLowerCase().replace(/\s+/g, '');
                 
-                // Create frequency maps
                 const frequencyMap1 = createFrequencyMap(processedName1);
                 const frequencyMap2 = createFrequencyMap(processedName2);
                 
-                // Calculate total count
                 let totalCount = 0;
                 
-                // Count letters in name1 not in name2
                 for (const char in frequencyMap1) {
                     if (frequencyMap2[char]) {
                         const diff = frequencyMap1[char] - frequencyMap2[char];
@@ -300,14 +279,12 @@
                     }
                 }
                 
-                // Count letters in name2 not in name1
                 for (const char in frequencyMap2) {
                     if (!frequencyMap1[char]) {
                         totalCount += frequencyMap2[char];
                     }
                 }
                 
-                // Get FLAMES result
                 return getFlamesResult(totalCount);
             }
             
@@ -334,20 +311,25 @@
                 return flames[0];
             }
             
-            // Animation functions
             function animateFlames(result) {
                 const letters = flamesAnimation.children;
                 
-                // First animate all letters
+                // Reset animation
+                for (let i = 0; i < letters.length; i++) {
+                    letters[i].classList.remove('visible');
+                    letters[i].style.color = '#3b82f6';
+                    letters[i].style.fontSize = '28px';
+                }
+                
+                // Animate letters appearing
                 for (let i = 0; i < letters.length; i++) {
                     setTimeout(() => {
                         letters[i].classList.add('visible');
                     }, i * 200);
                 }
                 
-                // Then show result after animation
+                // Highlight result
                 setTimeout(() => {
-                    // Determine which letter to highlight based on result
                     const flamesMap = {
                         "Friends": 0,
                         "Lovers": 1,
@@ -359,16 +341,12 @@
                     
                     const resultIndex = flamesMap[result];
                     
-                    // Reset all letters
                     for (let i = 0; i < letters.length; i++) {
                         letters[i].style.color = i === resultIndex ? '#1e3a8a' : '#bfdbfe';
                         letters[i].style.fontSize = i === resultIndex ? '36px' : '28px';
                     }
                     
-                    // Show result text
                     resultDiv.textContent = `${name1Input.value.trim()} and ${name2Input.value.trim()} are ${result}!`;
-                    
-                    // Show fireworks
                     createFireworks();
                 }, letters.length * 200 + 500);
             }
@@ -377,32 +355,65 @@
                 firework.style.display = 'block';
                 firework.innerHTML = '';
                 
-                // Create multiple fireworks particles
                 for (let i = 0; i < 50; i++) {
                     const particle = document.createElement('div');
                     particle.classList.add('firework-particle');
                     
-                    // Random position
                     const x = Math.random() * 100;
                     const y = Math.random() * 100;
                     
                     particle.style.left = `${x}%`;
                     particle.style.top = `${y}%`;
                     
-                    // Random delay
                     const delay = Math.random() * 1;
                     particle.style.animation = `fadeInOut 1s ${delay}s forwards`;
                     
                     firework.appendChild(particle);
                 }
                 
-                // Hide after animation
                 setTimeout(() => {
                     firework.style.display = 'none';
                 }, 2000);
             }
             
-            // Add CSS for firework particles
+            async function saveToSheet(name1, name2, result) {
+                const payload = {
+                    name1: name1,
+                    name2: name2,
+                    result: result,
+                    timestamp: new Date().toISOString()
+                };
+                
+                try {
+                    // Try Stein API first
+                    const response = await fetch(`${STEIN_URL}/${SHEET_NAME}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify([payload])
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    console.log("Saved to Stein successfully:", payload);
+                    return true;
+                } catch (error) {
+                    console.error("Stein error:", error);
+                    
+                    // Fallback to localStorage
+                    const localData = JSON.parse(localStorage.getItem('flamesData') || '[]');
+                    localData.push(payload);
+                    localStorage.setItem('flamesData', JSON.stringify(localData));
+                    console.log("Saved to localStorage as fallback:", payload);
+                    return false;
+                }
+            }
+
+            // Add fireworks animation style
             const style = document.createElement('style');
             style.textContent = `
                 @keyframes fadeInOut {
@@ -412,61 +423,6 @@
                 }
             `;
             document.head.appendChild(style);
-            
-            // Stein API functions
-            async function saveToSheet(name1, name2, result) {
-                try {
-                    const response = await fetch(`${STEIN_URL}/${SHEET_NAME}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify([
-                            {
-                                name1: name1,
-                                name2: name2,
-                                result: result,
-                                timestamp: new Date().toISOString()
-                            }
-                        ])
-                    });
-                    
-                    if (!response.ok) {
-                        console.error('Failed to save to sheet');
-                    }
-                } catch (error) {
-                    console.error('Error saving to sheet:', error);
-                }
-            }
-            
-            async function fetchHistory() {
-                try {
-                    const response = await fetch(`${STEIN_URL}/${SHEET_NAME}`);
-                    const data = await response.json();
-                    
-                    historyContainer.innerHTML = '';
-                    
-                    if (data.length === 0) {
-                        historyContainer.innerHTML = '<p>No history yet</p>';
-                        return;
-                    }
-                    
-                    // Display most recent first
-                    data.reverse().forEach(item => {
-                        const historyItem = document.createElement('div');
-                        historyItem.classList.add('history-item');
-                        historyItem.innerHTML = `
-                            <p><strong>${item.name1}</strong> and <strong>${item.name2}</strong></p>
-                            <p>Result: ${item.result}</p>
-                            <p class="timestamp">${new Date(item.timestamp).toLocaleString()}</p>
-                        `;
-                        historyContainer.appendChild(historyItem);
-                    });
-                } catch (error) {
-                    console.error('Error fetching history:', error);
-                    historyContainer.innerHTML = '<p>Error loading history</p>';
-                }
-            }
         });
     </script>
 </body>
