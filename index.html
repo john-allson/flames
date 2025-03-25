@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLAMES Game with Google Sheets</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #1e3a8a;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 139, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #1e3a8a;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #bfdbfe;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        .result {
+            margin-top: 30px;
+            font-size: 24px;
+            font-weight: bold;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1e3a8a;
+        }
+
+        .flames-animation {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            height: 60px;
+        }
+
+        .flames-letter {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 5px;
+            color: #3b82f6;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .firework {
+            position: relative;
+            height: 100px;
+            width: 100%;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .firework-particle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            opacity: 0;
+        }
+
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #bfdbfe;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .history-btn {
+            background-color: #e0e7ff;
+            color: #3b82f6;
+            margin-top: 30px;
+        }
+
+        .history-btn:hover {
+            background-color: #bfdbfe;
+        }
+
+        .history-container {
+            display: none;
+            margin-top: 20px;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #bfdbfe;
+            text-align: left;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FLAMES Game</h1>
+        
+        <div class="input-group">
+            <label for="name1">First Name:</label>
+            <input type="text" id="name1" placeholder="Enter first name">
+        </div>
+        
+        <div class="input-group">
+            <label for="name2">Second Name:</label>
+            <input type="text" id="name2" placeholder="Enter second name">
+        </div>
+        
+        <button id="calculateBtn">Calculate FLAMES</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Calculating your relationship...</p>
+        </div>
+        
+        <div class="flames-animation" id="flamesAnimation">
+            <div class="flames-letter">F</div>
+            <div class="flames-letter">L</div>
+            <div class="flames-letter">A</div>
+            <div class="flames-letter">M</div>
+            <div class="flames-letter">E</div>
+            <div class="flames-letter">S</div>
+        </div>
+        
+        <div class="firework" id="firework"></div>
+        
+        <div class="result" id="result"></div>
+        
+        <button class="history-btn" id="historyBtn">Show History</button>
+        
+        <div class="history-container" id="historyContainer"></div>
+    </div>
+
+    <script>
+        // Stein API configuration
+        const STEIN_URL = "https://api.steinhq.com/v1/storages/67e2de52c088333365872d33"; // Replace with your Stein API URL
+        const SHEET_NAME = "flames-results"; // Your sheet name in Stein
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const calculateBtn = document.getElementById('calculateBtn');
+            const name1Input = document.getElementById('name1');
+            const name2Input = document.getElementById('name2');
+            const resultDiv = document.getElementById('result');
+            const flamesAnimation = document.getElementById('flamesAnimation');
+            const firework = document.getElementById('firework');
+            const loadingDiv = document.getElementById('loading');
+            const historyBtn = document.getElementById('historyBtn');
+            const historyContainer = document.getElementById('historyContainer');
+
+            // Calculate FLAMES result
+            calculateBtn.addEventListener('click', function() {
+                const name1 = name1Input.value.trim();
+                const name2 = name2Input.value.trim();
+                
+                if (!name1 || !name2) {
+                    alert('Please enter both names!');
+                    return;
+                }
+                
+                // Show loading
+                loadingDiv.style.display = 'block';
+                resultDiv.textContent = '';
+                
+                // Calculate after a small delay for UX
+                setTimeout(() => {
+                    const result = calculateFlames(name1, name2);
+                    
+                    // Hide loading
+                    loadingDiv.style.display = 'none';
+                    
+                    // Animate FLAMES letters
+                    animateFlames(result);
+                    
+                    // Save to Google Sheets via Stein
+                    saveToSheet(name1, name2, result);
+                }, 1500);
+            });
+            
+            // Show/hide history
+            let historyVisible = false;
+            historyBtn.addEventListener('click', function() {
+                historyVisible = !historyVisible;
+                historyContainer.style.display = historyVisible ? 'block' : 'none';
+                historyBtn.textContent = historyVisible ? 'Hide History' : 'Show History';
+                
+                if (historyVisible) {
+                    fetchHistory();
+                }
+            });
+
+            // FLAMES calculation logic
+            function calculateFlames(name1, name2) {
+                // Process names
+                const processedName1 = name1.toLowerCase().replace(/\s+/g, '');
+                const processedName2 = name2.toLowerCase().replace(/\s+/g, '');
+                
+                // Create frequency maps
+                const frequencyMap1 = createFrequencyMap(processedName1);
+                const frequencyMap2 = createFrequencyMap(processedName2);
+                
+                // Calculate total count
+                let totalCount = 0;
+                
+                // Count letters in name1 not in name2
+                for (const char in frequencyMap1) {
+                    if (frequencyMap2[char]) {
+                        const diff = frequencyMap1[char] - frequencyMap2[char];
+                        if (diff > 0) {
+                            totalCount += diff;
+                        }
+                    } else {
+                        totalCount += frequencyMap1[char];
+                    }
+                }
+                
+                // Count letters in name2 not in name1
+                for (const char in frequencyMap2) {
+                    if (!frequencyMap1[char]) {
+                        totalCount += frequencyMap2[char];
+                    }
+                }
+                
+                // Get FLAMES result
+                return getFlamesResult(totalCount);
+            }
+            
+            function createFrequencyMap(name) {
+                const map = {};
+                for (const char of name) {
+                    map[char] = (map[char] || 0) + 1;
+                }
+                return map;
+            }
+            
+            function getFlamesResult(count) {
+                const flames = ["Friends", "Lovers", "Affectionate", "Marriage", "Enemies", "Siblings"];
+                
+                while (flames.length > 1) {
+                    const index = (count % flames.length) - 1;
+                    if (index >= 0) {
+                        flames.splice(index, 1);
+                    } else {
+                        flames.pop();
+                    }
+                }
+                
+                return flames[0];
+            }
+            
+            // Animation functions
+            function animateFlames(result) {
+                const letters = flamesAnimation.children;
+                
+                // First animate all letters
+                for (let i = 0; i < letters.length; i++) {
+                    setTimeout(() => {
+                        letters[i].classList.add('visible');
+                    }, i * 200);
+                }
+                
+                // Then show result after animation
+                setTimeout(() => {
+                    // Determine which letter to highlight based on result
+                    const flamesMap = {
+                        "Friends": 0,
+                        "Lovers": 1,
+                        "Affectionate": 2,
+                        "Marriage": 3,
+                        "Enemies": 4,
+                        "Siblings": 5
+                    };
+                    
+                    const resultIndex = flamesMap[result];
+                    
+                    // Reset all letters
+                    for (let i = 0; i < letters.length; i++) {
+                        letters[i].style.color = i === resultIndex ? '#1e3a8a' : '#bfdbfe';
+                        letters[i].style.fontSize = i === resultIndex ? '36px' : '28px';
+                    }
+                    
+                    // Show result text
+                    resultDiv.textContent = `${name1Input.value.trim()} and ${name2Input.value.trim()} are ${result}!`;
+                    
+                    // Show fireworks
+                    createFireworks();
+                }, letters.length * 200 + 500);
+            }
+            
+            function createFireworks() {
+                firework.style.display = 'block';
+                firework.innerHTML = '';
+                
+                // Create multiple fireworks particles
+                for (let i = 0; i < 50; i++) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('firework-particle');
+                    
+                    // Random position
+                    const x = Math.random() * 100;
+                    const y = Math.random() * 100;
+                    
+                    particle.style.left = `${x}%`;
+                    particle.style.top = `${y}%`;
+                    
+                    // Random delay
+                    const delay = Math.random() * 1;
+                    particle.style.animation = `fadeInOut 1s ${delay}s forwards`;
+                    
+                    firework.appendChild(particle);
+                }
+                
+                // Hide after animation
+                setTimeout(() => {
+                    firework.style.display = 'none';
+                }, 2000);
+            }
+            
+            // Add CSS for firework particles
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeInOut {
+                    0% { opacity: 0; transform: scale(0); }
+                    50% { opacity: 1; transform: scale(1.5); }
+                    100% { opacity: 0; transform: scale(0); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Stein API functions
+            async function saveToSheet(name1, name2, result) {
+                try {
+                    const response = await fetch(`${STEIN_URL}/${SHEET_NAME}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify([
+                            {
+                                name1: name1,
+                                name2: name2,
+                                result: result,
+                                timestamp: new Date().toISOString()
+                            }
+                        ])
+                    });
+                    
+                    if (!response.ok) {
+                        console.error('Failed to save to sheet');
+                    }
+                } catch (error) {
+                    console.error('Error saving to sheet:', error);
+                }
+            }
+            
+            async function fetchHistory() {
+                try {
+                    const response = await fetch(`${STEIN_URL}/${SHEET_NAME}`);
+                    const data = await response.json();
+                    
+                    historyContainer.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        historyContainer.innerHTML = '<p>No history yet</p>';
+                        return;
+                    }
+                    
+                    // Display most recent first
+                    data.reverse().forEach(item => {
+                        const historyItem = document.createElement('div');
+                        historyItem.classList.add('history-item');
+                        historyItem.innerHTML = `
+                            <p><strong>${item.name1}</strong> and <strong>${item.name2}</strong></p>
+                            <p>Result: ${item.result}</p>
+                            <p class="timestamp">${new Date(item.timestamp).toLocaleString()}</p>
+                        `;
+                        historyContainer.appendChild(historyItem);
+                    });
+                } catch (error) {
+                    console.error('Error fetching history:', error);
+                    historyContainer.innerHTML = '<p>Error loading history</p>';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
