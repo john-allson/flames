@@ -3,35 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLAMES Game</title>
+    <title>FLAMES Relationship Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f0f8ff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #bfdbfe;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --text: #081c3b;
+            --text-light: #64748b;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
-            color: #1e3a8a;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
 
         .container {
-            background-color: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 139, 0.1);
-            padding: 30px;
+            background-color: var(--card);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 40px;
             width: 100%;
             max-width: 500px;
             text-align: center;
+            transform: translateY(0);
+            opacity: 1;
+            transition: var(--transition);
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         h1 {
-            color: #1e3a8a;
-            margin-bottom: 30px;
+            color: var(--primary);
+            margin-bottom: 10px;
             font-size: 2.2rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            margin-bottom: 30px;
+            font-size: 1rem;
         }
 
         .input-group {
@@ -42,90 +85,82 @@
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: bold;
-            color: #1e3a8a;
+            color: var(--text);
+            font-weight: 500;
         }
 
         input {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #bfdbfe;
+            padding: 12px 16px;
+            border: 2px solid var(--primary-light);
             border-radius: 8px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: var(--transition);
+            background-color: var(--background);
         }
 
         input:focus {
             outline: none;
-            border-color: #3b82f6;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
         }
 
         button {
-            background-color: #3b82f6;
+            background-color: var(--primary);
             color: white;
             border: none;
-            padding: 12px 25px;
+            padding: 14px 28px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
-            font-weight: bold;
-            transition: background-color 0.3s;
+            font-weight: 600;
+            transition: var(--transition);
             margin-top: 10px;
             width: 100%;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
         }
 
         button:hover {
-            background-color: #2563eb;
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(59, 130, 246, 0.3);
         }
 
-        .result {
-            margin-top: 30px;
-            font-size: 24px;
-            font-weight: bold;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #1e3a8a;
-        }
-
-        .flames-animation {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-            height: 60px;
-        }
-
-        .flames-letter {
-            font-size: 28px;
-            font-weight: bold;
-            margin: 0 5px;
-            color: #3b82f6;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
-        }
-
-        .visible {
-            opacity: 1;
+        button:active {
             transform: translateY(0);
         }
 
-        .firework {
-            position: relative;
-            height: 100px;
-            width: 100%;
-            margin: 20px 0;
-            display: none;
+        .result-container {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: var(--primary-light);
+            opacity: 0;
+            transform: scale(0.9);
+            transition: var(--transition);
+            height: 0;
+            overflow: hidden;
         }
 
-        .firework-particle {
-            position: absolute;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background-color: #3b82f6;
-            opacity: 0;
+        .result-container.show {
+            opacity: 1;
+            transform: scale(1);
+            height: auto;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .result {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+        }
+
+        .names {
+            font-size: 18px;
+            color: var(--text);
+            margin-bottom: 5px;
         }
 
         .loading {
@@ -134,13 +169,13 @@
         }
 
         .spinner {
-            border: 4px solid #bfdbfe;
-            border-top: 4px solid #3b82f6;
+            border: 4px solid rgba(59, 130, 246, 0.1);
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
             width: 30px;
             height: 30px;
             animation: spin 1s linear infinite;
-            margin: 0 auto;
+            margin: 0 auto 10px;
         }
 
         @keyframes spin {
@@ -148,281 +183,301 @@
             100% { transform: rotate(360deg); }
         }
 
-        .error-message {
-            color: #ef4444;
-            margin-top: 10px;
+        .flames-letters {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .flame-letter {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 5px;
+            color: var(--primary-light);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .flame-letter.active {
+            opacity: 1;
+            transform: translateY(0);
+            color: var(--primary);
+        }
+
+        .flame-letter.highlight {
+            color: var(--primary-dark);
+            font-size: 36px;
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary);
+            opacity: 0;
+            z-index: 1000;
+            animation: confetti 3s ease-out;
+        }
+
+        @keyframes confetti {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
             display: none;
         }
 
-        .success-message {
-            color: #10b981;
-            margin-top: 10px;
-            display: none;
+        .success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>FLAMES Game</h1>
+        <p class="subtitle">Discover your relationship status</p>
         
         <div class="input-group">
-            <label for="name1">First Name:</label>
-            <input type="text" id="name1" placeholder="Enter first name">
+            <label for="name1">First Name</label>
+            <input type="text" id="name1" placeholder="Enter your name">
         </div>
         
         <div class="input-group">
-            <label for="name2">Second Name:</label>
-            <input type="text" id="name2" placeholder="Enter second name">
+            <label for="name2">Second Name</label>
+            <input type="text" id="name2" placeholder="Enter your crush name">
         </div>
         
-        <button id="calculateBtn">Calculate FLAMES</button>
+        <button id="calculateBtn">Find Relationship</button>
         
         <div class="loading" id="loading">
             <div class="spinner"></div>
             <p>Calculating your relationship...</p>
         </div>
         
-        <div class="error-message" id="errorMessage"></div>
-        <div class="success-message" id="successMessage"></div>
+        <div class="message" id="message"></div>
         
-        <div class="flames-animation" id="flamesAnimation">
-            <div class="flames-letter">F</div>
-            <div class="flames-letter">L</div>
-            <div class="flames-letter">A</div>
-            <div class="flames-letter">M</div>
-            <div class="flames-letter">E</div>
-            <div class="flames-letter">S</div>
+        <div class="flames-letters" id="flamesLetters">
+            <div class="flame-letter">F</div>
+            <div class="flame-letter">L</div>
+            <div class="flame-letter">A</div>
+            <div class="flame-letter">M</div>
+            <div class="flame-letter">E</div>
+            <div class="flame-letter">S</div>
         </div>
         
-        <div class="firework" id="firework"></div>
-        
-        <div class="result" id="result"></div>
+        <div class="result-container" id="resultContainer">
+            <div class="names" id="namesDisplay"></div>
+            <div class="result" id="result"></div>
+        </div>
     </div>
 
     <script>
-        // Your Stein API configuration
-        const STEIN_URL = "https://api.steinhq.com/v1/storages/67e2ea95c088333365873198";
-        const SHEET_NAME = "flames-results";
-
+        const STEIN_URL = "https://api.steinhq.com/v1/storages/67e2f025c088333365873391";
+        const SHEET_NAME = "Sheet1";
+        
         document.addEventListener('DOMContentLoaded', function() {
             const calculateBtn = document.getElementById('calculateBtn');
             const name1Input = document.getElementById('name1');
             const name2Input = document.getElementById('name2');
             const resultDiv = document.getElementById('result');
-            const flamesAnimation = document.getElementById('flamesAnimation');
-            const firework = document.getElementById('firework');
+            const namesDisplay = document.getElementById('namesDisplay');
+            const resultContainer = document.getElementById('resultContainer');
             const loadingDiv = document.getElementById('loading');
-            const errorDiv = document.getElementById('errorMessage');
-            const successDiv = document.getElementById('successMessage');
-
+            const messageDiv = document.getElementById('message');
+            const flamesLetters = document.querySelectorAll('.flame-letter');
+            
             calculateBtn.addEventListener('click', async function() {
-                const name1 = name1Input.value.trim();
-                const name2 = name2Input.value.trim();
+                const name1 = name1Input.value.trim().toLowerCase();
+                const name2 = name2Input.value.trim().toLowerCase();
                 
                 if (!name1 || !name2) {
-                    showError('Please enter both names!');
+                    showMessage('Please enter both names!', 'error');
                     return;
                 }
                 
+                // Reset UI
+                resultContainer.classList.remove('show');
                 loadingDiv.style.display = 'block';
-                errorDiv.style.display = 'none';
-                successDiv.style.display = 'none';
-                resultDiv.textContent = '';
+                messageDiv.style.display = 'none';
+                
+                // Animate FLAMES letters
+                animateFLAMESLetters();
                 
                 try {
-                    const result = calculateFlames(name1, name2);
-                    const saved = await saveToSheet(name1, name2, result);
+                    const result = getFLAMESResult(name1, name2);
                     
-                    loadingDiv.style.display = 'none';
+                    // Display result with animation
+                    setTimeout(() => {
+                        displayResult(name1, name2, result);
+                        createConfetti();
+                        
+                        // Save to Google Sheets
+                        storeResultInSheet(name1, name2, result)
+                            .then(success => {
+                                if (success) {
+                                    showMessage('sucess', 'success');
+                                } else {
+                                    showMessage('  ', 'error');
+                                }
+                            });
+                    }, 2000);
                     
-                    if (saved) {
-                        showSuccess("Result saved successfully!");
-                    } else {
-                        showError("Couldn't connect to server, but saved locally!");
-                    }
-                    
-                    animateFlames(result);
                 } catch (error) {
                     loadingDiv.style.display = 'none';
-                    showError('An error occurred. Please try again.');
+                    showMessage('An error occurred. Please try again.', 'error');
                     console.error(error);
                 }
             });
-
-            function showError(message) {
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-            }
-
-            function showSuccess(message) {
-                successDiv.textContent = message;
-                successDiv.style.display = 'block';
-            }
-
-            function calculateFlames(name1, name2) {
-                const processedName1 = name1.toLowerCase().replace(/\s+/g, '');
-                const processedName2 = name2.toLowerCase().replace(/\s+/g, '');
-                
-                const frequencyMap1 = createFrequencyMap(processedName1);
-                const frequencyMap2 = createFrequencyMap(processedName2);
-                
-                let totalCount = 0;
-                
-                for (const char in frequencyMap1) {
-                    if (frequencyMap2[char]) {
-                        const diff = frequencyMap1[char] - frequencyMap2[char];
-                        if (diff > 0) {
-                            totalCount += diff;
-                        }
-                    } else {
-                        totalCount += frequencyMap1[char];
-                    }
-                }
-                
-                for (const char in frequencyMap2) {
-                    if (!frequencyMap1[char]) {
-                        totalCount += frequencyMap2[char];
-                    }
-                }
-                
-                return getFlamesResult(totalCount);
-            }
             
-            function createFrequencyMap(name) {
-                const map = {};
-                for (const char of name) {
-                    map[char] = (map[char] || 0) + 1;
-                }
-                return map;
-            }
-            
-            function getFlamesResult(count) {
-                const flames = ["Friends", "Lovers", "Affectionate", "Marriage", "Enemies", "Siblings"];
-                
-                while (flames.length > 1) {
-                    const index = (count % flames.length) - 1;
-                    if (index >= 0) {
-                        flames.splice(index, 1);
-                    } else {
-                        flames.pop();
-                    }
-                }
-                
-                return flames[0];
-            }
-            
-            function animateFlames(result) {
-                const letters = flamesAnimation.children;
-                
-                // Reset animation
-                for (let i = 0; i < letters.length; i++) {
-                    letters[i].classList.remove('visible');
-                    letters[i].style.color = '#3b82f6';
-                    letters[i].style.fontSize = '28px';
-                }
-                
-                // Animate letters appearing
-                for (let i = 0; i < letters.length; i++) {
+            function animateFLAMESLetters() {
+                flamesLetters.forEach((letter, index) => {
+                    letter.classList.remove('active', 'highlight');
+                    
                     setTimeout(() => {
-                        letters[i].classList.add('visible');
-                    }, i * 200);
-                }
-                
-                // Highlight result
-                setTimeout(() => {
-                    const flamesMap = {
-                        "Friends": 0,
-                        "Lovers": 1,
-                        "Affectionate": 2,
-                        "Marriage": 3,
-                        "Enemies": 4,
-                        "Siblings": 5
-                    };
-                    
-                    const resultIndex = flamesMap[result];
-                    
-                    for (let i = 0; i < letters.length; i++) {
-                        letters[i].style.color = i === resultIndex ? '#1e3a8a' : '#bfdbfe';
-                        letters[i].style.fontSize = i === resultIndex ? '36px' : '28px';
-                    }
-                    
-                    resultDiv.textContent = `${name1Input.value.trim()} and ${name2Input.value.trim()} are ${result}!`;
-                    createFireworks();
-                }, letters.length * 200 + 500);
+                        letter.classList.add('active');
+                    }, index * 200);
+                });
             }
             
-            function createFireworks() {
-                firework.style.display = 'block';
-                firework.innerHTML = '';
-                
-                for (let i = 0; i < 50; i++) {
-                    const particle = document.createElement('div');
-                    particle.classList.add('firework-particle');
-                    
-                    const x = Math.random() * 100;
-                    const y = Math.random() * 100;
-                    
-                    particle.style.left = `${x}%`;
-                    particle.style.top = `${y}%`;
-                    
-                    const delay = Math.random() * 1;
-                    particle.style.animation = `fadeInOut 1s ${delay}s forwards`;
-                    
-                    firework.appendChild(particle);
-                }
-                
-                setTimeout(() => {
-                    firework.style.display = 'none';
-                }, 2000);
-            }
-            
-            async function saveToSheet(name1, name2, result) {
-                const payload = {
-                    name1: name1,
-                    name2: name2,
-                    result: result,
-                    timestamp: new Date().toISOString()
+            function highlightResultLetter(result) {
+                const flamesMap = {
+                    "Friends": 0,
+                    "Love": 1,
+                    "Affection": 2,
+                    "Marriage": 3,
+                    "Enemies": 4,
+                    "Siblings": 5
                 };
                 
-                try {
-                    // Try Stein API first
-                    const response = await fetch(`${STEIN_URL}/${SHEET_NAME}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify([payload])
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    console.log("Saved to Stein successfully:", payload);
-                    return true;
-                } catch (error) {
-                    console.error("Stein error:", error);
-                    
-                    // Fallback to localStorage
-                    const localData = JSON.parse(localStorage.getItem('flamesData') || '[]');
-                    localData.push(payload);
-                    localStorage.setItem('flamesData', JSON.stringify(localData));
-                    console.log("Saved to localStorage as fallback:", payload);
-                    return false;
+                const index = flamesMap[result];
+                flamesLetters.forEach(letter => letter.classList.remove('highlight'));
+                
+                if (index >= 0 && index < flamesLetters.length) {
+                    setTimeout(() => {
+                        flamesLetters[index].classList.add('highlight');
+                    }, 1500);
                 }
             }
-
-            // Add fireworks animation style
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes fadeInOut {
-                    0% { opacity: 0; transform: scale(0); }
-                    50% { opacity: 1; transform: scale(1.5); }
-                    100% { opacity: 0; transform: scale(0); }
+            
+            function displayResult(name1, name2, result) {
+                loadingDiv.style.display = 'none';
+                
+                namesDisplay.textContent = `${capitalizeFirstLetter(name1)} & ${capitalizeFirstLetter(name2)}`;
+                resultDiv.textContent = result;
+                
+                highlightResultLetter(result);
+                resultContainer.classList.add('show');
+            }
+            
+            function getFLAMESResult(name1, name2) {
+                let flames = ["Friends", "Love", "Affection", "Marriage", "Enemies", "Siblings"];
+                
+                // Count unique letters
+                let combined = name1 + name2;
+                let uniqueCount = 0;
+                
+                for (let char of new Set(combined)) {
+                    if (!name1.includes(char) || !name2.includes(char)) {
+                        uniqueCount++;
+                    }
                 }
-            `;
-            document.head.appendChild(style);
+                
+                let index = uniqueCount % flames.length;
+                return flames[index === 0 ? flames.length - 1 : index - 1];
+            }
+            
+            async function storeResultInSheet(name1, name2, result) {
+            let timestamp = new Date().toISOString();
+
+            let data = [{
+                name1: name1,
+                name2: name2,
+                result: result,
+                timestamp: timestamp
+            }];
+
+            try {
+                let response = await fetch(`${STEIN_URL}/${SHEET_NAME}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    console.log("Data saved successfully!");
+                } else {
+                    console.error("Failed to save data:", response.statusText);
+                }
+            } catch (error) {
+                console.error("Error saving data:", error);
+            }
+        }
+            
+            function createConfetti() {
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        const confetti = document.createElement('div');
+                        confetti.className = 'confetti';
+                        confetti.style.left = Math.random() * 100 + 'vw';
+                        confetti.style.backgroundColor = getRandomColor();
+                        confetti.style.width = Math.random() * 10 + 5 + 'px';
+                        confetti.style.height = Math.random() * 10 + 5 + 'px';
+                        document.body.appendChild(confetti);
+                        
+                        // Remove confetti after animation
+                        setTimeout(() => {
+                            confetti.remove();
+                        }, 3000);
+                    }, i * 50);
+                }
+            }
+            
+            function getRandomColor() {
+                const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            function showMessage(text, type) {
+                messageDiv.textContent = text;
+                messageDiv.className = 'message ' + type;
+                messageDiv.style.display = 'block';
+            }
+            
+            function capitalizeFirstLetter(string) {
+                return string.charAt(0).toUpperCase() + string.slice(1);
+            }
         });
     </script>
 </body>
